@@ -117,12 +117,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.folder_open, color: Colors.white54, size: 64),
-                      const SizedBox(height: 16),
-                      const Text('No profiles', style: TextStyle(color: Colors.white70, fontSize: 18)),
-                      const SizedBox(height: 8),
-                      const Text('Tap + to create one', style: TextStyle(color: Colors.white38)),
+                    children: const [
+                      Icon(Icons.folder_open, color: Colors.white54, size: 64),
+                      SizedBox(height: 16),
+                      Text('No profiles', style: TextStyle(color: Colors.white70, fontSize: 18)),
+                      SizedBox(height: 8),
+                      Text('Tap + to create one', style: TextStyle(color: Colors.white38)),
                     ],
                   ),
                 )

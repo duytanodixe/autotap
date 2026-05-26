@@ -1,19 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import '../models/dot.dart';
 
 class WebViewPanel extends StatefulWidget {
   final String url;
-  final List<Dot> dots;
-  final bool isRunning;
   final Function(InAppWebViewController)? onWebViewCreated;
   final Function(Offset)? onTapPosition;
 
   const WebViewPanel({
     Key? key,
     required this.url,
-    this.dots = const [],
-    this.isRunning = false,
     this.onWebViewCreated,
     this.onTapPosition,
   }) : super(key: key);

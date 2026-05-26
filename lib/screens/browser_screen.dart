@@ -9,6 +9,7 @@ import '../cubit/dot_cubit.dart';
 import '../cubit/toolbar_cubit.dart';
 import '../state/dot_state.dart';
 import '../models/dot.dart';
+import 'setting_screen.dart';
 
 class BrowserScreen extends StatefulWidget {
   final String url;
@@ -64,6 +65,30 @@ class _BrowserScreenState extends State<BrowserScreen> {
     context.read<DotCubit>().deleteDot(id);
     _dotTimers[id]?.cancel();
     _dotTimers.remove(id);
+  }
+
+  void _showSettings() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BlocProvider.value(
+          value: context.read<DotCubit>(),
+          child: const SettingScreen(mode: SettingMode.all),
+        ),
+      ),
+    );
+  }
+
+  void _showSingleDotSettings(String dotId) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BlocProvider.value(
+          value: context.read<DotCubit>(),
+          child: SettingScreen(mode: SettingMode.single, dotId: dotId),
+        ),
+      ),
+    );
   }
 
   void _togglePlayPause(bool isRunning) {
@@ -197,8 +222,6 @@ class _BrowserScreenState extends State<BrowserScreen> {
                     borderRadius: BorderRadius.circular(12),
                     child: WebViewPanel(
                       url: _currentUrl,
-                      dots: dotState.dots,
-                      isRunning: context.watch<ToolbarCubit>().state.isRunning,
                       onWebViewCreated: (controller) {
                         setState(() {
                           _webController = controller;
@@ -213,6 +236,7 @@ class _BrowserScreenState extends State<BrowserScreen> {
                   dot: dot,
                   onTap: () => context.read<DotCubit>().toggleDot(dot.id),
                   onDelete: () => _deleteDot(dot.id),
+                  onSettings: () => _showSingleDotSettings(dot.id),
                 )),
                 BlocBuilder<ToolbarCubit, dynamic>(
                   builder: (context, toolbarState) {
@@ -223,15 +247,17 @@ class _BrowserScreenState extends State<BrowserScreen> {
                       child: Toolbar(
                         webController: _webController!,
                         isRunning: isRunning,
-                        onAddDot: () {
-                          _showAddDotDialog(context);
-                        },
+                        onAddDot: () => _showAddDotDialog(context),
                         onPlayPause: () {
                           context.read<ToolbarCubit>().toggleRunning();
                           _togglePlayPause(isRunning);
                         },
+                        onSettings: _showSettings,
                         onSave: () {
-                          context.read<DotCubit>().loadDots();
+                          context.read<DotCubit>().saveDots();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Dots saved!')),
+                          );
                         },
                         onClearAll: () {
                           _stopAllTimers();
@@ -256,7 +282,7 @@ class _BrowserScreenState extends State<BrowserScreen> {
         backgroundColor: Colors.grey[850],
         title: const Text('Auto-Tap Mode', style: TextStyle(color: Colors.white)),
         content: const Text(
-          'Tap anywhere on the screen to add a tap point.\n\nLong press a dot to delete it.',
+          'Tap anywhere on the screen to add a tap point.\n\nLong press a dot to edit or delete it.',
           style: TextStyle(color: Colors.white70),
         ),
         actions: [

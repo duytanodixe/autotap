@@ -20,6 +20,10 @@ class DotCubit extends Cubit<DotState> {
     }
   }
 
+  Future<void> saveDots() async {
+    await _service.saveDots(state.dots, profileId: state.currentProfileId);
+  }
+
   void setProfile(String profileId) {
     emit(state.copyWith(currentProfileId: profileId));
   }
@@ -34,6 +38,45 @@ class DotCubit extends Cubit<DotState> {
 
   void updateDot(Dot dot) {
     final updatedDots = state.dots.map((d) => d.id == dot.id ? dot : d).toList();
+    emit(state.copyWith(dots: updatedDots));
+    _service.saveDots(updatedDots, profileId: state.currentProfileId);
+  }
+
+  void updateDotById(String id, {
+    int? actionIntervalTime,
+    int? holdTime,
+    int? startDelay,
+    int? antiDetection,
+  }) {
+    final updatedDots = state.dots.map((d) {
+      if (d.id == id) {
+        return d.copyWith(
+          actionIntervalTime: actionIntervalTime,
+          holdTime: holdTime,
+          startDelay: startDelay,
+          antiDetection: antiDetection,
+        );
+      }
+      return d;
+    }).toList();
+    emit(state.copyWith(dots: updatedDots));
+    _service.saveDots(updatedDots, profileId: state.currentProfileId);
+  }
+
+  void updateAllDots({
+    int? actionIntervalTime,
+    int? holdTime,
+    int? startDelay,
+    int? antiDetection,
+  }) {
+    final updatedDots = state.dots.map((d) {
+      return d.copyWith(
+        actionIntervalTime: actionIntervalTime,
+        holdTime: holdTime,
+        startDelay: startDelay,
+        antiDetection: antiDetection,
+      );
+    }).toList();
     emit(state.copyWith(dots: updatedDots));
     _service.saveDots(updatedDots, profileId: state.currentProfileId);
   }
