@@ -1,80 +1,140 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../models/dot.dart';
+import '../cubit/dot_cubit.dart';
+import '../screens/setting_screen.dart'; // để dùng SettingScreen & SettingMode
 
-class DotWidget extends StatelessWidget {
+class DotWidget extends StatefulWidget {
   final Dot dot;
   final VoidCallback? onTap;
-  final VoidCallback? onDelete;
-  final VoidCallback? onSettings;
+  final Function(Offset)? onPositionChanged;
 
   const DotWidget({
     Key? key,
     required this.dot,
     this.onTap,
-    this.onDelete,
-    this.onSettings,
+    this.onPositionChanged,
   }) : super(key: key);
+
+  @override
+  State<DotWidget> createState() => _DotWidgetState();
+}
+
+class _DotWidgetState extends State<DotWidget> {
+  late Offset position;
+
+  @override
+  void initState() {
+    super.initState();
+    position = widget.dot.position;
+  }
+
+  @override
+  void didUpdateWidget(covariant DotWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.dot.position != widget.dot.position) {
+      position = widget.dot.position;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Positioned(
-      left: dot.position.dx - 15,
-      top: dot.position.dy - 15,
+      left: position.dx,
+      top: position.dy,
       child: GestureDetector(
-        onTap: onTap,
-        onLongPress: () {
-          showModalBottomSheet(
-            context: context,
-            backgroundColor: Colors.grey[850],
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-            ),
-            builder: (ctx) => Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ListTile(
-                    leading: const Icon(Icons.tune, color: Colors.blueAccent),
-                    title: const Text('Settings', style: TextStyle(color: Colors.white)),
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      onSettings?.call();
-                    },
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.delete, color: Colors.redAccent),
-                    title: const Text('Delete', style: TextStyle(color: Colors.white)),
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      onDelete?.call();
-                    },
-                  ),
-                ],
-              ),
-            ),
-          );
+        onPanUpdate: (details) {
+          setState(() {
+            position += details.delta;
+          });
+          widget.onPositionChanged?.call(position);
         },
-        child: Container(
-          width: 30,
-          height: 30,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: dot.isRunning ? Colors.red.withOpacity(0.8) : Colors.blue.withOpacity(0.8),
-            border: Border.all(color: Colors.white, width: 2),
-            boxShadow: [
-              BoxShadow(
-                color: dot.isRunning ? Colors.red.withOpacity(0.5) : Colors.blue.withOpacity(0.5),
-                blurRadius: 8,
-                spreadRadius: 2,
+        onTap: widget.onTap,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Container(
+              width: 70,
+              height: 70,
+              color: Colors.black.withOpacity(0.2),
+            ),
+            CustomPaint(
+              size: const Size(60, 60),
+              painter: CrosshairPainter(),
+            ),
+            Positioned(
+              left: 2,
+              top: 2,
+              child: Text(
+                widget.dot.id.toString(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ],
-          ),
-          child: const Center(
-            child: Icon(Icons.touch_app, color: Colors.white, size: 16),
-          ),
+            ),
+            Positioned(
+              right: -17,
+              top: -17,
+              child: IconButton(
+                icon: const Icon(Icons.settings, color: Colors.white, size: 18),
+                onPressed: () {
+                  final dotCubit = context.read<DotCubit>();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => BlocProvider.value(
+                        value: dotCubit,
+                        child: SettingScreen(
+                          mode: SettingMode.single,
+                          dotId: widget.dot.id,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
+}
+
+class CrosshairPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Paint circlePaint = Paint()
+      ..color = Colors.blue
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+
+    final Paint linePaint = Paint()
+      ..color = Colors.blue
+      ..strokeWidth = 2;
+
+    final Paint centerDotPaint = Paint()
+      ..color = Colors.red
+      ..style = PaintingStyle.fill;
+
+    final Offset center = Offset(size.width / 2, size.height / 2);
+    final double radius = size.width / 2 - 4;
+
+    // Vẽ vòng tròn
+    canvas.drawCircle(center, radius, circlePaint);
+
+    // Vẽ dấu cộng
+    canvas.drawLine(Offset(center.dx - radius, center.dy),
+        Offset(center.dx + radius, center.dy), linePaint);
+    canvas.drawLine(Offset(center.dx, center.dy - radius),
+        Offset(center.dx, center.dy + radius), linePaint);
+
+    // Vẽ chấm đỏ ở tâm
+    canvas.drawCircle(center, 3, centerDotPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

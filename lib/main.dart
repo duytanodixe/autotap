@@ -1,24 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'screens/home_screen.dart';
-import 'cubit/dot_cubit.dart';
+import 'overlay/overlaytoolbar.dart';
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
 
-void main() {
-  runApp(const MyApp());
+  runApp(const MaterialApp(
+    title: 'Simple WebView App',
+    home: HomeScreen(),
+    debugShowCheckedModeBanner: false,
+  ));
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => DotCubit(),
-      child: const MaterialApp(
-        title: 'Auto Tap Pro',
-        home: HomeScreen(),
-        debugShowCheckedModeBanner: false,
-      ),
-    );
-  }
+/// Entry point dành cho Overlay
+@pragma("vm:entry-point")
+void overlayMain() {
+  runApp(
+    const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: OverlayToolbar(), // ⭐ gọi widget ở file khác
+    ),
+  );
 }

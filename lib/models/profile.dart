@@ -4,42 +4,39 @@ class Profile {
   final DateTime createdAt;
   final bool isActive;
 
-  Profile({
+  const Profile({
     required this.id,
     required this.name,
     required this.createdAt,
     required this.isActive,
   });
 
-  Profile copyWith({
-    String? id,
-    String? name,
-    DateTime? createdAt,
-    bool? isActive,
-  }) {
-    return Profile(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      createdAt: createdAt ?? this.createdAt,
-      isActive: isActive ?? this.isActive,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toMap() {
     return {
       'id': id,
       'name': name,
-      'createdAt': createdAt.toIso8601String(),
+      'createdAt': createdAt.millisecondsSinceEpoch,
       'isActive': isActive,
     };
   }
 
-  factory Profile.fromJson(Map<String, dynamic> json) {
+  factory Profile.fromMap(Map<String, dynamic> map) {
+    final created = map['createdAt'];
+    DateTime createdAt;
+    if (created is int) {
+      createdAt = DateTime.fromMillisecondsSinceEpoch(created);
+    } else if (created is String) {
+      createdAt = DateTime.tryParse(created) ?? DateTime.now();
+    } else {
+      createdAt = DateTime.now();
+    }
     return Profile(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
-      isActive: json['isActive'] ?? false,
+      id: map['id'] as String,
+      name: map['name'] as String? ?? 'Profile',
+      createdAt: createdAt,
+      isActive: map['isActive'] as bool? ?? false,
     );
   }
 }
+
+

@@ -1,27 +1,36 @@
-import 'dart:ui';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../state/toolbar_state.dart';
+import 'dot_cubit.dart';
 
 class ToolbarCubit extends Cubit<ToolbarState> {
-  ToolbarCubit() : super(const ToolbarState());
+  final DotCubit dotCubit;
 
-  void toggleRunning() {
-    emit(state.copyWith(isRunning: !state.isRunning));
-  }
+  ToolbarCubit(this.dotCubit)
+      : super(const ToolbarState(posX: 350, posY: 200));
 
-  void setRunning(bool running) {
-    emit(state.copyWith(isRunning: running));
+  void updatePosition(double dx, double dy) {
+    emit(state.copyWith(
+      posX: state.posX + dx,
+      posY: state.posY + dy,
+    ));
   }
 
   void toggleExpanded() {
     emit(state.copyWith(isExpanded: !state.isExpanded));
   }
 
-  void setExpanded(bool expanded) {
-    emit(state.copyWith(isExpanded: expanded));
+  void setExpanded(bool value) {
+    emit(state.copyWith(isExpanded: value));
   }
 
-  void updatePosition(Offset position) {
-    emit(state.copyWith(position: position));
+  void toggleRunning() {
+    final newRunning = !state.isRunning;
+    emit(state.copyWith(isRunning: newRunning));
+
+    if (newRunning) {
+      dotCubit.startAutoTap();  // DotCubit tự lo gọi _autoTapAt
+    } else {
+      dotCubit.stopAutoTap();
+    }
   }
 }

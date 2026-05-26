@@ -11,7 +11,7 @@ class SettingScreen extends StatefulWidget {
   final String? dotId;
 
   const SettingScreen({
-    Key? key,
+    super.key,
     required this.mode,
     this.dotId,
   });
@@ -47,15 +47,35 @@ class _SettingScreenState extends State<SettingScreen> {
       ),
       child: Scaffold(
         backgroundColor: Colors.grey[900],
-        appBar: AppBar(
-          backgroundColor: const Color(0xFF1565C0),
-          iconTheme: const IconThemeData(color: Colors.white),
-          title: Text(
-            widget.mode == SettingMode.all ? "Dot Settings (All)" : "Dot Settings (Single)",
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(60),
+          child: AppBar(
+            automaticallyImplyLeading: false,
+            flexibleSpace: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF1565C0), Color(0xFF42A5F5)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+            ),
+            title: Text(
+              widget.mode == SettingMode.all
+                  ? "Dot Settings (All)"
+                  : "Dot Settings (Single)",
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+            ),
+            centerTitle: true,
+            elevation: 0,
           ),
-          centerTitle: true,
-          elevation: 0,
         ),
         body: BlocBuilder<DotSettingCubit, List<Dot>>(
           builder: (context, dots) {
@@ -64,14 +84,21 @@ class _SettingScreenState extends State<SettingScreen> {
 
             if (target == null) {
               return const Center(
-                child: Text("No dot selected", style: TextStyle(color: Colors.white)),
+                child: Text(
+                  "No dot selected",
+                  style: TextStyle(color: Colors.white),
+                ),
               );
             }
 
+            // Chỉ khởi tạo một lần, tránh reset slider mỗi lần rebuild
             if (!_initialized) {
-              actionCtl = TextEditingController(text: target.actionIntervalTime.toString());
-              holdCtl = TextEditingController(text: target.holdTime.toString());
-              startDelayCtl = TextEditingController(text: target.startDelay.toString());
+              actionCtl = TextEditingController(
+                  text: target.actionIntervalTime.toString());
+              holdCtl =
+                  TextEditingController(text: target.holdTime.toString());
+              startDelayCtl = TextEditingController(
+                  text: target.startDelay.toString());
               antiDetectionValue = target.antiDetection.toDouble();
               _initialized = true;
             }
@@ -80,8 +107,7 @@ class _SettingScreenState extends State<SettingScreen> {
               padding: const EdgeInsets.all(16.0),
               child: ListView(
                 children: [
-                  _sectionTitle("Action Interval Time"),
-                  const SizedBox(height: 8),
+                  _sectionTitle("Action interval time"),
                   TextField(
                     keyboardType: TextInputType.number,
                     style: const TextStyle(color: Colors.white),
@@ -90,8 +116,7 @@ class _SettingScreenState extends State<SettingScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  _sectionTitle("Hold Time"),
-                  const SizedBox(height: 8),
+                  _sectionTitle("Hold time"),
                   TextField(
                     keyboardType: TextInputType.number,
                     style: const TextStyle(color: Colors.white),
@@ -100,8 +125,7 @@ class _SettingScreenState extends State<SettingScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  _sectionTitle("Start Delay"),
-                  const SizedBox(height: 8),
+                  _sectionTitle("Start delay"),
                   TextField(
                     keyboardType: TextInputType.number,
                     style: const TextStyle(color: Colors.white),
@@ -110,37 +134,29 @@ class _SettingScreenState extends State<SettingScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  _sectionTitle("Anti-Detection (random offset radius)"),
-                  const SizedBox(height: 8),
+                  _sectionTitle("Anti-detection (radius/randomness)"),
                   Slider(
                     min: 0,
                     max: 100,
                     divisions: 100,
                     value: antiDetectionValue,
                     label: "${antiDetectionValue.toInt()}px",
-                    activeColor: const Color(0xFF42A5F5),
-                    inactiveColor: Colors.grey[700],
                     onChanged: (v) {
                       setState(() {
                         antiDetectionValue = v;
                       });
                     },
                   ),
-                  Center(
-                    child: Text(
-                      "${antiDetectionValue.toInt()} pixels random offset",
-                      style: const TextStyle(color: Colors.white54),
-                    ),
-                  ),
-                  const SizedBox(height: 30),
 
+                  const SizedBox(height: 30),
                   SizedBox(
                     width: double.infinity,
                     height: 48,
                     child: ElevatedButton(
                       onPressed: () async {
-                        final action = int.tryParse(actionCtl.text) ?? 1000;
-                        final hold = int.tryParse(holdCtl.text) ?? 100;
+                        // chỉ cập nhật khi nhấn Xác nhận
+                        final action = int.tryParse(actionCtl.text) ?? 0;
+                        final hold = int.tryParse(holdCtl.text) ?? 0;
                         final startDelay = int.tryParse(startDelayCtl.text) ?? 0;
                         final anti = antiDetectionValue.toInt();
 
@@ -149,6 +165,7 @@ class _SettingScreenState extends State<SettingScreen> {
                         cubit.setStartDelay(startDelay);
                         cubit.setAntiDetection(anti);
 
+                        // lưu vào Firestore cho profile hiện tại/active
                         final dotCubit = context.read<DotCubit>();
                         await dotCubit.saveDots();
 
@@ -196,19 +213,14 @@ class _SettingScreenState extends State<SettingScreen> {
       suffixText: suffix,
       suffixStyle: const TextStyle(color: Colors.white70),
       labelStyle: const TextStyle(color: Colors.white70),
-      filled: true,
-      fillColor: Colors.grey[800],
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide.none,
-      ),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
         borderSide: const BorderSide(color: Colors.white24),
+        borderRadius: BorderRadius.circular(8),
       ),
       focusedBorder: OutlineInputBorder(
+        borderSide: const BorderSide(color: Colors.blue),
         borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: Color(0xFF42A5F5)),
       ),
     );
   }

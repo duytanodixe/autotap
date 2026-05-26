@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'browser_screen.dart';
 import 'tutorial_screen.dart';
-import 'profile_screen.dart';
-import '../widgets/navbar_widget.dart';
+import '../widgets/navbar_widget.dart'; // import navbar riêng
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -13,7 +12,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _controller = TextEditingController();
-  bool _isPressed = false;
+  bool _isPressed = false; // để tạo hiệu ứng nhấn cho nút
 
   void _goToBrowser() {
     String url = _controller.text.trim();
@@ -39,10 +38,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFF101820),
+
+      // ======= HEADER =======
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(100),
         child: Container(
-          padding: const EdgeInsets.only(top: 40, left: 20, right: 20, bottom: 20),
+          padding:
+              const EdgeInsets.only(top: 40, left: 20, right: 20, bottom: 20),
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               colors: [Color(0xFF1565C0), Color(0xFF42A5F5)],
@@ -62,30 +64,19 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const SizedBox(width: 40),
-              Text(
-                'Auto Tap Pro',
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+          child: Center(
+            child: Text(
+              'Auto Tap Pro',
+              style: theme.textTheme.headlineSmall?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
               ),
-              IconButton(
-                icon: const Icon(Icons.person, color: Colors.white),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const ProfileScreen()),
-                  );
-                },
-              ),
-            ],
+            ),
           ),
         ),
       ),
+
+      // ======= BODY =======
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
@@ -147,13 +138,17 @@ class _HomeScreenState extends State<HomeScreen> {
                         color: Colors.grey.withOpacity(0.6),
                         fontStyle: FontStyle.italic,
                       ),
-                      prefixIcon: const Icon(Icons.language, color: Colors.blueAccent),
+                      prefixIcon:
+                          const Icon(Icons.language, color: Colors.blueAccent),
                       border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
                     ),
                   ),
                 ),
                 const SizedBox(height: 24),
+
+                // ======= NÚT BROWSE =======
                 GestureDetector(
                   onTapDown: (_) => setState(() => _isPressed = true),
                   onTapUp: (_) {
@@ -216,7 +211,10 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
+
+      // ======= BOTTOM NAVBAR =======
       bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0),
     );
   }
 }
+//123123/123/12312312312312312312321321323132

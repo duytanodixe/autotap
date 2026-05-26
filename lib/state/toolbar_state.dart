@@ -1,29 +1,32 @@
-import 'dart:ui';
 import 'package:equatable/equatable.dart';
 
 class ToolbarState extends Equatable {
-  final bool isRunning;
+  final double posX;
+  final double posY;
   final bool isExpanded;
-  final Offset position;
+  final bool isRunning;
 
   const ToolbarState({
-    this.isRunning = false,
+    required this.posX,
+    required this.posY,
     this.isExpanded = false,
-    this.position = const Offset(20, 100),
+    this.isRunning = false,
   });
 
   ToolbarState copyWith({
-    bool? isRunning,
+    double? posX,
+    double? posY,
     bool? isExpanded,
-    Offset? position,
+    bool? isRunning,
   }) {
     return ToolbarState(
-      isRunning: isRunning ?? this.isRunning,
+      posX: posX ?? this.posX,
+      posY: posY ?? this.posY,
       isExpanded: isExpanded ?? this.isExpanded,
-      position: position ?? this.position,
+      isRunning: isRunning ?? this.isRunning,
     );
   }
 
   @override
-  List<Object?> get props => [isRunning, isExpanded, position];
+  List<Object> get props => [posX, posY, isExpanded, isRunning];
 }
