@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import '../widgets/webview_panel.dart';
-import '../widgets/toolbar.dart'; 
+import '../widgets/toolbar.dart';
 
 class BrowserScreen extends StatefulWidget {
   final String url;
@@ -14,8 +14,7 @@ class BrowserScreen extends StatefulWidget {
 class _BrowserScreenState extends State<BrowserScreen> {
   late TextEditingController _urlController;
   late String _currentUrl;
-
-  InAppWebViewController? _webController; // giữ controller ở đây
+  InAppWebViewController? _webController;
 
   @override
   void initState() {
@@ -69,13 +68,9 @@ class _BrowserScreenState extends State<BrowserScreen> {
                     controller: _urlController,
                     onSubmitted: (_) => _loadUrl(),
                     style: const TextStyle(fontSize: 14),
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       border: InputBorder.none,
                       hintText: 'Nhập địa chỉ web',
-                      hintStyle: TextStyle(
-                        color: Colors.grey.withOpacity(0.6),
-                        fontStyle: FontStyle.italic,
-                      ),
                     ),
                   ),
                 ),
@@ -98,14 +93,18 @@ class _BrowserScreenState extends State<BrowserScreen> {
                 url: _currentUrl,
                 onWebViewCreated: (controller) {
                   setState(() {
-                    _webController = controller; 
+                    _webController = controller;
                   });
                 },
               ),
             ),
           ),
-          if (_webController != null) 
-            Toolbar(webController: _webController!),
+          if (_webController != null)
+            Positioned(
+              bottom: 20,
+              right: 20,
+              child: Toolbar(webController: _webController!),
+            ),
         ],
       ),
     );
