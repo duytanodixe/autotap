@@ -1,3 +1,1 @@
-# Auto Tap Pro
-
-A web-based automation tool built with Flutter.
+# Web-Inspector-App

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'browser_screen.dart';
+import 'tutorial_screen.dart';
+import '../widgets/navbar_widget.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -13,6 +16,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _goToBrowser() {
     String url = _controller.text.trim();
+
     if (url.isNotEmpty) {
       if (!url.startsWith('http://') && !url.startsWith('https://')) {
         url = 'https://$url';
@@ -198,19 +202,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
-    );
-  }
-}
-
-class BrowserScreen extends StatelessWidget {
-  final String url;
-  const BrowserScreen({Key? key, required this.url}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Browser')),
-      body: Center(child: Text('URL: $url')),
+      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0),
     );
   }
 }
