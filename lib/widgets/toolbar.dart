@@ -1,39 +1,95 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import '../cubit/toolbar_cubit.dart';
+import '../state/toolbar_state.dart' as ts;
 
 class Toolbar extends StatelessWidget {
   final InAppWebViewController webController;
+  final VoidCallback? onAddDot;
+  final VoidCallback? onPlayPause;
+  final VoidCallback? onClearAll;
+  final VoidCallback? onSave;
+  final bool isRunning;
 
-  const Toolbar({Key? key, required this.webController}) : super(key: key);
+  const Toolbar({
+    Key? key,
+    required this.webController,
+    this.onAddDot,
+    this.onPlayPause,
+    this.onClearAll,
+    this.onSave,
+    this.isRunning = false,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: Colors.blue.withOpacity(0.9),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          IconButton(
-            icon: const Icon(Icons.zoom_in, color: Colors.white, size: 20),
-            onPressed: () => webController.zoomBy(1.5),
-            tooltip: 'Zoom In',
+    return BlocBuilder<ToolbarCubit, ts.ToolbarState>(
+      builder: (context, state) {
+        return Positioned(
+          bottom: state.position.dy,
+          right: state.position.dx,
+          child: GestureDetector(
+            onPanUpdate: (details) {
+              context.read<ToolbarCubit>().updatePosition(
+                Offset(
+                  state.position.dx + details.delta.dx,
+                  state.position.dy + details.delta.dy,
+                ),
+              );
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.blueGrey[900]?.withOpacity(0.9),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(2, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildIconButton(
+                    icon: isRunning ? Icons.pause : Icons.play_arrow,
+                    color: isRunning ? Colors.orange : Colors.green,
+                    onPressed: onPlayPause,
+                  ),
+                  _buildIconButton(
+                    icon: Icons.add_location_alt,
+                    color: Colors.blueAccent,
+                    onPressed: onAddDot,
+                  ),
+                  _buildIconButton(
+                    icon: Icons.save,
+                    color: Colors.amber,
+                    onPressed: onSave,
+                  ),
+                  _buildIconButton(
+                    icon: Icons.delete_sweep,
+                    color: Colors.redAccent,
+                    onPressed: onClearAll,
+                  ),
+                ],
+              ),
+            ),
           ),
-          IconButton(
-            icon: const Icon(Icons.zoom_out, color: Colors.white, size: 20),
-            onPressed: () => webController.zoomBy(0.67),
-            tooltip: 'Zoom Out',
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white, size: 20),
-            onPressed: () => webController.reload(),
-            tooltip: 'Reload',
-          ),
-        ],
-      ),
+        );
+      },
+    );
+  }
+
+  Widget _buildIconButton({
+    required IconData icon,
+    required Color color,
+    VoidCallback? onPressed,
+  }) {
+    return IconButton(
+      icon: Icon(icon, color: color, size: 24),
+      onPressed: onPressed,
     );
   }
 }

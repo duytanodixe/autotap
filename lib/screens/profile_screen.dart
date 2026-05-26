@@ -5,7 +5,7 @@ import '../models/profile.dart';
 import '../cubit/dot_cubit.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  const ProfileScreen({Key? key}) : super(key: key);
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -38,86 +38,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final name = await showDialog<String>(
       context: context,
       builder: (ctx) {
-        return Dialog(
+        return AlertDialog(
           backgroundColor: Colors.grey[850],
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          child: Container(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Create New Profile',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _nameCtl,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    hintText: 'Enter profile name',
-                    hintStyle: const TextStyle(color: Colors.white54),
-                    filled: true,
-                    fillColor: Colors.grey[800],
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                  autofocus: true,
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      child: const Text(
-                        'Cancel',
-                        style: TextStyle(color: Colors.white70),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: () => Navigator.pop(ctx, _nameCtl.text.trim()),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF1565C0), Color(0xFF42A5F5)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(10),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Colors.blueAccent,
-                              blurRadius: 6,
-                              offset: Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 24, vertical: 10),
-                        child: const Text(
-                          'Create',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                )
-              ],
+          title: const Text('Create New Profile', style: TextStyle(color: Colors.white)),
+          content: TextField(
+            controller: _nameCtl,
+            style: const TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              hintText: 'Enter profile name',
+              hintStyle: const TextStyle(color: Colors.white54),
+              filled: true,
+              fillColor: Colors.grey[800],
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide.none,
+              ),
             ),
+            autofocus: true,
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, _nameCtl.text.trim()),
+              child: const Text('Create', style: TextStyle(color: Colors.blueAccent)),
+            ),
+          ],
         );
       },
     );
@@ -157,151 +105,68 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[900],
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(60),
-        child: AppBar(
-          automaticallyImplyLeading: true,
-          flexibleSpace: Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFF1565C0), Color(0xFF42A5F5)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-          ),
-          title: const Text(
-            'Profiles',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          centerTitle: true,
-          elevation: 0,
-        ),
+      appBar: AppBar(
+        title: const Text('Profiles', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        centerTitle: true,
+        backgroundColor: const Color(0xFF1565C0),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: _loading
-          ? const Center(
-              child: CircularProgressIndicator(color: Colors.blueAccent))
+          ? const Center(child: CircularProgressIndicator(color: Colors.blueAccent))
           : _profiles.isEmpty
-              ? const Center(
-                  child: Text('No profiles',
-                      style: TextStyle(color: Colors.white70)),
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.folder_open, color: Colors.white54, size: 64),
+                      const SizedBox(height: 16),
+                      const Text('No profiles', style: TextStyle(color: Colors.white70, fontSize: 18)),
+                      const SizedBox(height: 8),
+                      const Text('Tap + to create one', style: TextStyle(color: Colors.white38)),
+                    ],
+                  ),
                 )
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: ListView.builder(
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.all(12),
-                    itemCount: _profiles.length,
-                    itemBuilder: (context, index) {
-                      final p = _profiles[index];
-                      final isActive = p.isActive;
-                      return AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeOut,
-                        margin: const EdgeInsets.symmetric(vertical: 8),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16),
-                          gradient: LinearGradient(
-                            colors: isActive
-                                ? [const Color(0xFF1E88E5), const Color(0xFF42A5F5)]
-                                : [const Color(0xFF2C2C2C), const Color(0xFF1A1A1A)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          boxShadow: [
-                            if (isActive)
-                              BoxShadow(
-                                color: Colors.blueAccent.withOpacity(0.6),
-                                blurRadius: 12,
-                                spreadRadius: 1,
-                              )
-                            else
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.5),
-                                blurRadius: 8,
-                                offset: const Offset(0, 4),
-                              ),
+              : ListView.builder(
+                  padding: const EdgeInsets.all(12),
+                  itemCount: _profiles.length,
+                  itemBuilder: (context, index) {
+                    final p = _profiles[index];
+                    return Card(
+                      color: p.isActive ? const Color(0xFF1E88E5) : Colors.grey[850],
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        leading: CircleAvatar(
+                          backgroundColor: p.isActive ? Colors.blueAccent : Colors.grey[700],
+                          child: const Icon(Icons.account_circle, color: Colors.white),
+                        ),
+                        title: Text(p.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        subtitle: Text('ID: ${p.id}', style: const TextStyle(color: Colors.white70)),
+                        trailing: Wrap(
+                          spacing: 4,
+                          children: [
+                            if (p.isActive)
+                              const Icon(Icons.check_circle, color: Colors.lightGreenAccent),
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.redAccent),
+                              onPressed: () => _deleteProfile(p),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.login, color: Colors.white),
+                              onPressed: () => _selectAndSetActive(p),
+                            ),
                           ],
                         ),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
-                          leading: CircleAvatar(
-                            radius: 26,
-                            backgroundColor:
-                                isActive ? Colors.blueAccent : Colors.grey[700],
-                            child: const Icon(
-                              Icons.account_circle_rounded,
-                              color: Colors.white,
-                              size: 30,
-                            ),
-                          ),
-                          title: Text(
-                            p.name,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          subtitle: Text(
-                            'ID: ${p.id}',
-                            style: const TextStyle(
-                                color: Colors.white70, fontSize: 13),
-                          ),
-                          trailing: Wrap(
-                            spacing: 4,
-                            children: [
-                              if (isActive)
-                                const Icon(Icons.verified_rounded,
-                                    color: Colors.lightGreenAccent),
-                              IconButton(
-                                icon: const Icon(Icons.delete_forever_rounded,
-                                    color: Colors.redAccent),
-                                onPressed: () => _deleteProfile(p),
-                                splashRadius: 24,
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.login_rounded,
-                                    color: Colors.white),
-                                onPressed: () => _selectAndSetActive(p),
-                                splashRadius: 24,
-                              ),
-                            ],
-                          ),
-                          onTap: () => _selectAndSetActive(p),
-                        ),
-                      );
-                    },
-                  ),
+                        onTap: () => _selectAndSetActive(p),
+                      ),
+                    );
+                  },
                 ),
-      floatingActionButton: Container(
-        width: 65,
-        height: 65,
-        decoration: const BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: LinearGradient(
-            colors: [Color(0xFF1565C0), Color(0xFF42A5F5)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.blueAccent,
-              blurRadius: 8,
-              spreadRadius: 1,
-              offset: Offset(0, 3),
-            ),
-          ],
-        ),
-        child: IconButton(
-          icon: const Icon(Icons.person_add_alt_1_rounded,
-              color: Colors.white, size: 30),
-          onPressed: _addProfile,
-        ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _addProfile,
+        backgroundColor: const Color(0xFF1565C0),
+        child: const Icon(Icons.person_add, color: Colors.white),
       ),
     );
   }
