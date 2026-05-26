@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'browser_screen.dart';
 import 'tutorial_screen.dart';
+import 'profile_screen.dart';
 import '../widgets/navbar_widget.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -61,14 +62,27 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
-          child: Center(
-            child: Text(
-              'Auto Tap Pro',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const SizedBox(width: 40),
+              Text(
+                'Auto Tap Pro',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
+              IconButton(
+                icon: const Icon(Icons.person, color: Colors.white),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                  );
+                },
+              ),
+            ],
           ),
         ),
       ),
