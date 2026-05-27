@@ -1,6 +1,5 @@
 import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 import 'package:flutter/material.dart';
-import '../widgets/navbar_widget.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_app_minimizer_plus/flutter_app_minimizer_plus.dart';
 class ActionScreen extends StatefulWidget {
@@ -153,7 +152,6 @@ Future<void> _onTapButton() async {
           ),
         ),
       ),
-      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 2),
     );
   }
 }

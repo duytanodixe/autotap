@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'browser_screen.dart';
-import 'tutorial_screen.dart';
-import '../widgets/navbar_widget.dart'; // import navbar riêng
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -211,9 +209,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
-
-      // ======= BOTTOM NAVBAR =======
-      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0),
     );
   }
 }

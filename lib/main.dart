@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'screens/home_screen.dart';
+import 'screens/main_screen.dart';
 import 'overlay/overlaytoolbar.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   runApp(const MaterialApp(
     title: 'Simple WebView App',
-    home: HomeScreen(),
+    home: MainScreen(),
     debugShowCheckedModeBanner: false,
   ));
 }

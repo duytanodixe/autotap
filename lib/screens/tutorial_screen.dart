@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
-import '../widgets/navbar_widget.dart';
-import 'home_screen.dart';
 
 class TutorialScreen extends StatefulWidget {
   const TutorialScreen({super.key});
@@ -173,9 +171,6 @@ class _TutorialScreenState extends State<TutorialScreen> {
           ],
         ),
       ),
-
-      // ===== NAVBAR =====
-      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 1),
     );
   }
 }
