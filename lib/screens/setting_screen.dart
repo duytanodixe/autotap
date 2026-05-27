@@ -25,6 +25,7 @@ class _SettingScreenState extends State<SettingScreen> {
   late TextEditingController holdCtl;
   late TextEditingController startDelayCtl;
   double antiDetectionValue = 0;
+  bool _isDarkTheme = true;
   bool _initialized = false;
 
   @override
@@ -104,54 +105,133 @@ class _SettingScreenState extends State<SettingScreen> {
             }
 
             return Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               child: ListView(
                 children: [
-                  _sectionTitle("Action interval time"),
-                  TextField(
-                    keyboardType: TextInputType.number,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: _inputDecoration("ms"),
-                    controller: actionCtl,
+                  _buildSectionCard(
+                    icon: Icons.timer_outlined,
+                    title: "Action interval time",
+                    child: TextField(
+                      keyboardType: TextInputType.number,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: _inputDecoration("ms"),
+                      controller: actionCtl,
+                    ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 14),
 
-                  _sectionTitle("Hold time"),
-                  TextField(
-                    keyboardType: TextInputType.number,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: _inputDecoration("ms"),
-                    controller: holdCtl,
+                  _buildSectionCard(
+                    icon: Icons.touch_app_outlined,
+                    title: "Hold time",
+                    child: TextField(
+                      keyboardType: TextInputType.number,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: _inputDecoration("ms"),
+                      controller: holdCtl,
+                    ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 14),
 
-                  _sectionTitle("Start delay"),
-                  TextField(
-                    keyboardType: TextInputType.number,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: _inputDecoration("ms"),
-                    controller: startDelayCtl,
+                  _buildSectionCard(
+                    icon: Icons.hourglass_bottom_outlined,
+                    title: "Start delay",
+                    child: TextField(
+                      keyboardType: TextInputType.number,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: _inputDecoration("ms"),
+                      controller: startDelayCtl,
+                    ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 14),
 
-                  _sectionTitle("Anti-detection (radius/randomness)"),
-                  Slider(
-                    min: 0,
-                    max: 100,
-                    divisions: 100,
-                    value: antiDetectionValue,
-                    label: "${antiDetectionValue.toInt()}px",
-                    onChanged: (v) {
-                      setState(() {
-                        antiDetectionValue = v;
-                      });
-                    },
+                  _buildSectionCard(
+                    icon: Icons.shield_outlined,
+                    title: "Anti-detection (radius/randomness)",
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              "Random radius",
+                              style: TextStyle(color: Colors.white70),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF1565C0).withValues(alpha: 0.25),
+                                borderRadius: BorderRadius.circular(999),
+                                border: Border.all(color: Colors.blueAccent),
+                              ),
+                              child: Text(
+                                "${antiDetectionValue.toInt()} px",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        SliderTheme(
+                          data: SliderTheme.of(context).copyWith(
+                            activeTrackColor: Colors.blueAccent,
+                            inactiveTrackColor: Colors.white24,
+                            thumbColor: Colors.blueAccent,
+                            overlayColor: Colors.blueAccent.withValues(alpha: 0.15),
+                            valueIndicatorColor: const Color(0xFF1565C0),
+                          ),
+                          child: Slider(
+                            min: 0,
+                            max: 100,
+                            divisions: 100,
+                            value: antiDetectionValue,
+                            label: "${antiDetectionValue.toInt()}px",
+                            onChanged: (v) {
+                              setState(() {
+                                antiDetectionValue = v;
+                              });
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
+                  const SizedBox(height: 14),
 
-                  const SizedBox(height: 30),
+                  _buildSectionCard(
+                    icon: Icons.palette_outlined,
+                    title: "Appearance",
+                    child: SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text(
+                        "Dark Theme",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      subtitle: const Text(
+                        "Use dark visuals for this screen",
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                      value: _isDarkTheme,
+                      activeColor: Colors.blueAccent,
+                      onChanged: (value) {
+                        setState(() {
+                          _isDarkTheme = value;
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 24),
                   SizedBox(
                     width: double.infinity,
-                    height: 48,
+                    height: 52,
                     child: ElevatedButton(
                       onPressed: () async {
                         // chỉ cập nhật khi nhấn Xác nhận
@@ -174,16 +254,32 @@ class _SettingScreenState extends State<SettingScreen> {
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF1565C0),
+                        elevation: 0,
+                        shadowColor: Colors.transparent,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(18),
                         ),
                       ),
-                      child: const Text(
-                        'Confirm',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                      child: Ink(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(18),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x4D1565C0),
+                              blurRadius: 12,
+                              offset: Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                        child: const Center(
+                          child: Text(
+                            'Confirm',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -197,30 +293,62 @@ class _SettingScreenState extends State<SettingScreen> {
     );
   }
 
-  Widget _sectionTitle(String text) {
-    return Text(
-      text,
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: 16,
-        fontWeight: FontWeight.bold,
+  Widget _buildSectionCard({
+    required IconData icon,
+    required String title,
+    required Widget child,
+  }) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1F1F1F),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white10),
       ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _sectionTitle(title, icon),
+          const SizedBox(height: 10),
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _sectionTitle(String text, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, color: Colors.blue[200], size: 18),
+        const SizedBox(width: 8),
+        Text(
+          text,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 15.5,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
     );
   }
 
   InputDecoration _inputDecoration(String suffix) {
     return InputDecoration(
+      filled: true,
+      fillColor: const Color(0xFF2A2A2A),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       suffixText: suffix,
       suffixStyle: const TextStyle(color: Colors.white70),
       labelStyle: const TextStyle(color: Colors.white70),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
       enabledBorder: OutlineInputBorder(
         borderSide: const BorderSide(color: Colors.white24),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(10),
       ),
       focusedBorder: OutlineInputBorder(
         borderSide: const BorderSide(color: Colors.blue),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(10),
       ),
     );
   }
