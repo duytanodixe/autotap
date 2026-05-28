@@ -1,42 +1,62 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../cubit/toolbar_cubit.dart';
-import '../state/toolbar_state.dart';
-// import '../screens/setting_screen.dart';
-import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import '../cubit/dot_cubit.dart';
-import '../state/dot_state.dart';
-import '../widgets/dot_widget.dart';
 import '../models/dot.dart';
 import '../services/dot_local_service.dart';
+import '../services/toolbar_storage.dart';
+import '../state/dot_state.dart';
+import '../state/toolbar_state.dart';
 import '../screens/profile_screen.dart';
-class Toolbar extends StatelessWidget {
-  final InAppWebViewController webController;
+import '../widgets/dot_widget.dart';
+import '../utils/constants.dart';
+
+class Toolbar extends StatefulWidget {
+  final dynamic webController;
 
   const Toolbar({super.key, required this.webController});
+
+  @override
+  State<Toolbar> createState() => _ToolbarState();
+}
+
+class _ToolbarState extends State<Toolbar> {
+  late final ToolbarStorage _storage;
+
+  @override
+  void initState() {
+    super.initState();
+    _storage = ToolbarStorage();
+  }
 
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
         BlocProvider(
-          create: (_) => DotCubit(DotLocalService(), webController)..loadDots(),
+          create: (_) => DotCubit(DotLocalService(), widget.webController)..loadDots(),
         ),
         BlocProvider(
-          create: (ctx) => ToolbarCubit(ctx.read<DotCubit>()),
+          create: (ctx) => ToolbarCubit(_storage)..loadPosition(),
         ),
       ],
-      child: BlocBuilder<ToolbarCubit, ToolbarState>(
-        builder: (context, state) {
+      child: BlocConsumer<ToolbarCubit, ToolbarState>(
+        listener: (context, toolbarState) {
+          final dotCubit = context.read<DotCubit>();
+          if (toolbarState.isRunning) {
+            dotCubit.startAutoTap();
+          } else {
+            dotCubit.stopAutoTap();
+          }
+        },
+        builder: (context, toolbarState) {
           return BlocBuilder<DotCubit, DotState>(
             builder: (context, dotState) {
-              final dots = dotState.dots;
-
               return Stack(
                 children: [
                   Positioned(
-                    left: state.posX,
-                    top: state.posY,
+                    left: toolbarState.posX,
+                    top: toolbarState.posY,
                     child: GestureDetector(
                       onPanUpdate: (details) {
                         context.read<ToolbarCubit>().updatePosition(
@@ -46,8 +66,8 @@ class Toolbar extends StatelessWidget {
                       },
                       child: Container(
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.6),
-                          borderRadius: BorderRadius.circular(12),
+                          color: Colors.black.withValues(alpha: 0.6),
+                          borderRadius: BorderRadius.circular(AppConstants.mediumRadius),
                         ),
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         child: Column(
@@ -55,125 +75,30 @@ class Toolbar extends StatelessWidget {
                           children: [
                             IconButton(
                               icon: Icon(
-                                state.isRunning
-                                    ? Icons.pause
-                                    : Icons.play_arrow,
-                                color: state.isRunning
-                                    ? Colors.green
-                                    : Colors.red,
+                                toolbarState.isRunning ? Icons.pause : Icons.play_arrow,
+                                color: toolbarState.isRunning ? Colors.green : Colors.red,
                               ),
                               onPressed: () {
                                 context.read<ToolbarCubit>().toggleRunning();
                               },
                             ),
-
-                            if (state.isExpanded) ...[
+                            if (toolbarState.isExpanded) ...[
                               IconButton(
                                 icon: const Icon(Icons.add, color: Colors.white),
-                                onPressed: () {
-                                  int maxId = 0;
-                                  if (dots.isNotEmpty) {
-                                    maxId = dots
-                                        .map((d) => int.tryParse(d.id) ?? 0)
-                                        .reduce((a, b) => a > b ? a : b);
-                                  }
-                                  final newId = (maxId + 1).toString();
-                                  final newDot = Dot(
-                                    id: newId,
-                                    actionIntervalTime: 1000,
-                                    holdTime: 500,
-                                    antiDetection: 0,
-                                    startDelay: 0,
-                                    position: const Offset(100, 200),
-                                  );
-                                  context.read<DotCubit>().addDot(newDot);
-                                },
+                                onPressed: () => _addDot(context, dotState),
                               ),
                               IconButton(
                                 icon: const Icon(Icons.remove, color: Colors.white),
-                                onPressed: () {
-                                  if (dots.isNotEmpty) {
-                                    final maxDot = dots.reduce((a, b) =>
-                                        int.parse(a.id) > int.parse(b.id)
-                                            ? a
-                                            : b);
-                                    context.read<DotCubit>().deleteDot(maxDot.id);
-                                  }
-                                },
+                                onPressed: () => _removeLastDot(context, dotState),
                               ),
                               IconButton(
                                 icon: const Icon(Icons.save, color: Colors.green),
-                                onPressed: () async {
-                                  final cubit = context.read<DotCubit>();
-                                  await cubit.saveDots();
-                                  final error = cubit.state.errorMessage;
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(error == null ? 'Saved dots successfully' : 'Save failed: $error'),
-                                      ),
-                                    );
-                                  }
-                                },
+                                onPressed: () => _saveDots(context),
                               ),
                               IconButton(
                                 icon: const Icon(Icons.account_circle, color: Colors.white),
-                                onPressed: () async {
-                                  final selected = await Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => BlocProvider.value(
-                                        value: context.read<DotCubit>(),
-                                        child: const ProfileScreen(),
-                                      ),
-                                    ),
-                                  );
-                                  if (selected is String?) {
-                                    final dotCubit = context.read<DotCubit>();
-                                    dotCubit.setProfile(selected);
-                                    await dotCubit.loadDots(profileId: selected);
-                                  }
-                                },
+                                onPressed: () => _openProfileScreen(context),
                               ),
-                              IconButton(
-                                icon: const Icon(Icons.zoom_out_map, color: Colors.orange),
-                                onPressed: () async {
-                                  // Debug: Kiểm tra scale của WebView
-                                  try {
-                                    final result = await webController.evaluateJavascript(source: """
-                                      (function() {
-                                        return {
-                                          viewportWidth: window.innerWidth,
-                                          viewportHeight: window.innerHeight,
-                                          devicePixelRatio: window.devicePixelRatio,
-                                          bodyZoom: document.body.style.zoom || '1',
-                                          htmlZoom: document.documentElement.style.zoom || '1',
-                                          metaViewport: document.querySelector('meta[name="viewport"]')?.content || 'not found'
-                                        };
-                                      })();
-                                    """);
-                                    
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text('WebView Scale Info: $result'),
-                                          duration: const Duration(seconds: 3),
-                                        ),
-                                      );
-                                    }
-                                  } catch (e) {
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text('Error checking scale: $e'),
-                                          backgroundColor: Colors.red,
-                                        ),
-                                      );
-                                    }
-                                  }
-                                },
-                              ),
-                              // Removed global settings entry; per-dot settings only via DotWidget
                               IconButton(
                                 icon: const Icon(Icons.expand_less, color: Colors.white),
                                 onPressed: () {
@@ -187,24 +112,17 @@ class Toolbar extends StatelessWidget {
                                   context.read<ToolbarCubit>().toggleExpanded();
                                 },
                               ),
-                            ]
+                            ],
                           ],
                         ),
                       ),
                     ),
                   ),
-                  for (var dot in dots)
+                  for (final dot in dotState.dots)
                     DotWidget(
                       dot: dot,
                       onPositionChanged: (newPos) {
-                        final updatedDot = Dot(
-                          id: dot.id,
-                          actionIntervalTime: dot.actionIntervalTime,
-                          holdTime: dot.holdTime,
-                          antiDetection: dot.antiDetection,
-                          startDelay: dot.startDelay,
-                          position: newPos,
-                        );
+                        final updatedDot = dot.copyWith(position: newPos);
                         context.read<DotCubit>().updateDot(updatedDot);
                       },
                     ),
@@ -215,5 +133,68 @@ class Toolbar extends StatelessWidget {
         },
       ),
     );
+  }
+
+  void _addDot(BuildContext context, DotState dotState) {
+    int maxId = 0;
+    if (dotState.dots.isNotEmpty) {
+      maxId = dotState.dots
+          .map((d) => int.tryParse(d.id) ?? 0)
+          .reduce((a, b) => a > b ? a : b);
+    }
+    final newId = (maxId + 1).toString();
+    final newDot = Dot(
+      id: newId,
+      actionIntervalTime: AppConstants.defaultActionInterval,
+      holdTime: AppConstants.defaultHoldTime,
+      antiDetection: AppConstants.defaultAntiDetection,
+      startDelay: AppConstants.defaultStartDelay,
+      position: const Offset(100, 200),
+    );
+    context.read<DotCubit>().addDot(newDot);
+  }
+
+  void _removeLastDot(BuildContext context, DotState dotState) {
+    if (dotState.dots.isNotEmpty) {
+      final maxDot = dotState.dots.reduce(
+        (a, b) => int.parse(a.id) > int.parse(b.id) ? a : b,
+      );
+      context.read<DotCubit>().deleteDot(maxDot.id);
+    }
+  }
+
+  Future<void> _saveDots(BuildContext context) async {
+    final cubit = context.read<DotCubit>();
+    final success = await cubit.saveDots();
+    final error = cubit.state.errorMessage;
+    
+    if (!context.mounted) return;
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          success ? 'Saved dots successfully' : 'Save failed: $error',
+        ),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  Future<void> _openProfileScreen(BuildContext context) async {
+    final selected = await Navigator.push<String?>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BlocProvider.value(
+          value: context.read<DotCubit>(),
+          child: const ProfileScreen(),
+        ),
+      ),
+    );
+    
+    if (selected != null && context.mounted) {
+      final dotCubit = context.read<DotCubit>();
+      dotCubit.setProfile(selected);
+      await dotCubit.loadDots(profileId: selected);
+    }
   }
 }

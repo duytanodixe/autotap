@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../cubit/setting_cubit.dart';
 import '../cubit/dot_cubit.dart';
 import '../models/dot.dart';
+import '../utils/constants.dart';
 
 enum SettingMode { all, single }
 
@@ -21,19 +22,59 @@ class SettingScreen extends StatefulWidget {
 }
 
 class _SettingScreenState extends State<SettingScreen> {
-  late TextEditingController actionCtl;
-  late TextEditingController holdCtl;
-  late TextEditingController startDelayCtl;
-  double antiDetectionValue = 0;
-  bool _isDarkTheme = true;
-  bool _initialized = false;
+  late TextEditingController _actionCtl;
+  late TextEditingController _holdCtl;
+  late TextEditingController _startDelayCtl;
+  double _antiDetectionValue = 0;
+  bool _isInitialized = false;
+  String? _actionError;
+  String? _holdError;
+  String? _delayError;
 
   @override
   void dispose() {
-    actionCtl.dispose();
-    holdCtl.dispose();
-    startDelayCtl.dispose();
+    _actionCtl.dispose();
+    _holdCtl.dispose();
+    _startDelayCtl.dispose();
     super.dispose();
+  }
+
+  bool _validateInputs() {
+    bool isValid = true;
+    setState(() {
+      _actionError = null;
+      _holdError = null;
+      _delayError = null;
+    });
+
+    final action = int.tryParse(_actionCtl.text);
+    if (action == null || action < AppConstants.minValue) {
+      setState(() => _actionError = 'Must be >= ${AppConstants.minValue}');
+      isValid = false;
+    } else if (action > AppConstants.maxValue) {
+      setState(() => _actionError = 'Must be <= ${AppConstants.maxValue}');
+      isValid = false;
+    }
+
+    final hold = int.tryParse(_holdCtl.text);
+    if (hold == null || hold < AppConstants.minValue) {
+      setState(() => _holdError = 'Must be >= ${AppConstants.minValue}');
+      isValid = false;
+    } else if (hold > AppConstants.maxValue) {
+      setState(() => _holdError = 'Must be <= ${AppConstants.maxValue}');
+      isValid = false;
+    }
+
+    final startDelay = int.tryParse(_startDelayCtl.text);
+    if (startDelay == null || startDelay < AppConstants.minValue) {
+      setState(() => _delayError = 'Must be >= ${AppConstants.minValue}');
+      isValid = false;
+    } else if (startDelay > AppConstants.maxValue) {
+      setState(() => _delayError = 'Must be <= ${AppConstants.maxValue}');
+      isValid = false;
+    }
+
+    return isValid;
   }
 
   @override
@@ -49,111 +90,130 @@ class _SettingScreenState extends State<SettingScreen> {
       child: Scaffold(
         backgroundColor: Colors.grey[900],
         appBar: PreferredSize(
-          preferredSize: const Size.fromHeight(60),
-          child: AppBar(
-            automaticallyImplyLeading: false,
-            flexibleSpace: Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFF1565C0), Color(0xFF42A5F5)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+          preferredSize: const Size.fromHeight(AppConstants.miniAppBarHeight),
+          child: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF1565C0), Color(0xFF42A5F5)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            child: AppBar(
+              automaticallyImplyLeading: false,
+              title: Text(
+                widget.mode == SettingMode.all
+                    ? 'Dot Settings (All)'
+                    : 'Dot Settings (Single)',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-            ),
-            title: Text(
-              widget.mode == SettingMode.all
-                  ? "Dot Settings (All)"
-                  : "Dot Settings (Single)",
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
               ),
+              centerTitle: true,
+              elevation: 0,
+              backgroundColor: Colors.transparent,
             ),
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () => Navigator.pop(context),
-            ),
-            centerTitle: true,
-            elevation: 0,
           ),
         ),
         body: BlocBuilder<DotSettingCubit, List<Dot>>(
           builder: (context, dots) {
-            final cubit = context.read<DotSettingCubit>();
             final target = dots.isNotEmpty ? dots.first : null;
 
             if (target == null) {
               return const Center(
                 child: Text(
-                  "No dot selected",
+                  'No dot selected',
                   style: TextStyle(color: Colors.white),
                 ),
               );
             }
 
-            // Chỉ khởi tạo một lần, tránh reset slider mỗi lần rebuild
-            if (!_initialized) {
-              actionCtl = TextEditingController(
+            if (!_isInitialized) {
+              _actionCtl = TextEditingController(
                   text: target.actionIntervalTime.toString());
-              holdCtl =
-                  TextEditingController(text: target.holdTime.toString());
-              startDelayCtl = TextEditingController(
+              _holdCtl = TextEditingController(text: target.holdTime.toString());
+              _startDelayCtl = TextEditingController(
                   text: target.startDelay.toString());
-              antiDetectionValue = target.antiDetection.toDouble();
-              _initialized = true;
+              _antiDetectionValue = target.antiDetection.toDouble();
+              _isInitialized = true;
             }
 
             return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppConstants.mediumPadding,
+                vertical: 14,
+              ),
               child: ListView(
                 children: [
                   _buildSectionCard(
                     icon: Icons.timer_outlined,
-                    title: "Action interval time",
+                    title: 'Action interval time',
+                    errorText: _actionError,
                     child: TextField(
                       keyboardType: TextInputType.number,
                       style: const TextStyle(color: Colors.white),
-                      decoration: _inputDecoration("ms"),
-                      controller: actionCtl,
+                      decoration: _inputDecoration('ms', _actionError),
+                      controller: _actionCtl,
+                      onChanged: (_) {
+                        if (_actionError != null) {
+                          setState(() => _actionError = null);
+                        }
+                      },
                     ),
                   ),
                   const SizedBox(height: 14),
 
                   _buildSectionCard(
                     icon: Icons.touch_app_outlined,
-                    title: "Hold time",
+                    title: 'Hold time',
+                    errorText: _holdError,
                     child: TextField(
                       keyboardType: TextInputType.number,
                       style: const TextStyle(color: Colors.white),
-                      decoration: _inputDecoration("ms"),
-                      controller: holdCtl,
+                      decoration: _inputDecoration('ms', _holdError),
+                      controller: _holdCtl,
+                      onChanged: (_) {
+                        if (_holdError != null) {
+                          setState(() => _holdError = null);
+                        }
+                      },
                     ),
                   ),
                   const SizedBox(height: 14),
 
                   _buildSectionCard(
                     icon: Icons.hourglass_bottom_outlined,
-                    title: "Start delay",
+                    title: 'Start delay',
+                    errorText: _delayError,
                     child: TextField(
                       keyboardType: TextInputType.number,
                       style: const TextStyle(color: Colors.white),
-                      decoration: _inputDecoration("ms"),
-                      controller: startDelayCtl,
+                      decoration: _inputDecoration('ms', _delayError),
+                      controller: _startDelayCtl,
+                      onChanged: (_) {
+                        if (_delayError != null) {
+                          setState(() => _delayError = null);
+                        }
+                      },
                     ),
                   ),
                   const SizedBox(height: 14),
 
                   _buildSectionCard(
                     icon: Icons.shield_outlined,
-                    title: "Anti-detection (radius/randomness)",
+                    title: 'Anti-detection (radius/randomness)',
                     child: Column(
                       children: [
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             const Text(
-                              "Random radius",
+                              'Random radius',
                               style: TextStyle(color: Colors.white70),
                             ),
                             Container(
@@ -162,12 +222,13 @@ class _SettingScreenState extends State<SettingScreen> {
                                 vertical: 5,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF1565C0).withValues(alpha: 0.25),
+                                color: const Color(AppConstants.primaryDark)
+                                    .withValues(alpha: 0.25),
                                 borderRadius: BorderRadius.circular(999),
                                 border: Border.all(color: Colors.blueAccent),
                               ),
                               child: Text(
-                                "${antiDetectionValue.toInt()} px",
+                                '${_antiDetectionValue.toInt()} px',
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w600,
@@ -183,102 +244,46 @@ class _SettingScreenState extends State<SettingScreen> {
                             inactiveTrackColor: Colors.white24,
                             thumbColor: Colors.blueAccent,
                             overlayColor: Colors.blueAccent.withValues(alpha: 0.15),
-                            valueIndicatorColor: const Color(0xFF1565C0),
+                            valueIndicatorColor:
+                                const Color(AppConstants.primaryDark),
                           ),
                           child: Slider(
                             min: 0,
-                            max: 100,
-                            divisions: 100,
-                            value: antiDetectionValue,
-                            label: "${antiDetectionValue.toInt()}px",
+                            max: AppConstants.maxAntiDetectionRadius.toDouble(),
+                            divisions: AppConstants.maxAntiDetectionRadius,
+                            value: _antiDetectionValue,
+                            label: '${_antiDetectionValue.toInt()}px',
                             onChanged: (v) {
-                              setState(() {
-                                antiDetectionValue = v;
-                              });
+                              setState(() => _antiDetectionValue = v);
                             },
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 14),
-
-                  _buildSectionCard(
-                    icon: Icons.palette_outlined,
-                    title: "Appearance",
-                    child: SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text(
-                        "Dark Theme",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      subtitle: const Text(
-                        "Use dark visuals for this screen",
-                        style: TextStyle(color: Colors.white70),
-                      ),
-                      value: _isDarkTheme,
-                      activeColor: Colors.blueAccent,
-                      onChanged: (value) {
-                        setState(() {
-                          _isDarkTheme = value;
-                        });
-                      },
-                    ),
-                  ),
                   const SizedBox(height: 24),
+
                   SizedBox(
                     width: double.infinity,
                     height: 52,
                     child: ElevatedButton(
-                      onPressed: () async {
-                        // chỉ cập nhật khi nhấn Xác nhận
-                        final action = int.tryParse(actionCtl.text) ?? 0;
-                        final hold = int.tryParse(holdCtl.text) ?? 0;
-                        final startDelay = int.tryParse(startDelayCtl.text) ?? 0;
-                        final anti = antiDetectionValue.toInt();
-
-                        cubit.setActionInterval(action);
-                        cubit.setHoldTime(hold);
-                        cubit.setStartDelay(startDelay);
-                        cubit.setAntiDetection(anti);
-
-                        // lưu vào Firestore cho profile hiện tại/active
-                        final dotCubit = context.read<DotCubit>();
-                        await dotCubit.saveDots();
-
-                        if (!mounted) return;
-                        Navigator.pop(context);
-                      },
+                      onPressed: () => _onConfirm(context),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1565C0),
+                        backgroundColor: const Color(AppConstants.primaryDark),
                         elevation: 0,
                         shadowColor: Colors.transparent,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18),
+                          borderRadius:
+                              BorderRadius.circular(AppConstants.largeRadius),
                         ),
                       ),
-                      child: Ink(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(18),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Color(0x4D1565C0),
-                              blurRadius: 12,
-                              offset: Offset(0, 6),
-                            ),
-                          ],
-                        ),
-                        child: const Center(
-                          child: Text(
-                            'Confirm',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
+                      child: const Center(
+                        child: Text(
+                          'Confirm',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
                           ),
                         ),
                       ),
@@ -293,16 +298,39 @@ class _SettingScreenState extends State<SettingScreen> {
     );
   }
 
+  void _onConfirm(BuildContext context) async {
+    if (!_validateInputs()) return;
+
+    final action = int.parse(_actionCtl.text);
+    final hold = int.parse(_holdCtl.text);
+    final startDelay = int.parse(_startDelayCtl.text);
+    final anti = _antiDetectionValue.toInt();
+
+    final cubit = context.read<DotSettingCubit>();
+    cubit.setActionInterval(action);
+    cubit.setHoldTime(hold);
+    cubit.setStartDelay(startDelay);
+    cubit.setAntiDetection(anti);
+
+    final dotCubit = context.read<DotCubit>();
+    final navigator = Navigator.of(context);
+    final success = await dotCubit.saveDots();
+
+    if (!success || !mounted) return;
+    navigator.pop();
+  }
+
   Widget _buildSectionCard({
     required IconData icon,
     required String title,
     required Widget child,
+    String? errorText,
   }) {
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF1F1F1F),
-        borderRadius: BorderRadius.circular(14),
+        color: const Color(AppConstants.surfaceDark),
+        borderRadius: BorderRadius.circular(AppConstants.mediumRadius),
         border: Border.all(color: Colors.white10),
       ),
       child: Column(
@@ -311,6 +339,16 @@ class _SettingScreenState extends State<SettingScreen> {
           _sectionTitle(title, icon),
           const SizedBox(height: 10),
           child,
+          if (errorText != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              errorText,
+              style: const TextStyle(
+                color: Colors.redAccent,
+                fontSize: 12,
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -333,22 +371,32 @@ class _SettingScreenState extends State<SettingScreen> {
     );
   }
 
-  InputDecoration _inputDecoration(String suffix) {
+  InputDecoration _inputDecoration(String suffix, String? errorText) {
     return InputDecoration(
       filled: true,
-      fillColor: const Color(0xFF2A2A2A),
+      fillColor: const Color(AppConstants.inputSurfaceDark),
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       suffixText: suffix,
       suffixStyle: const TextStyle(color: Colors.white70),
       labelStyle: const TextStyle(color: Colors.white70),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+      errorText: errorText,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppConstants.largeRadius),
+        borderSide: BorderSide(
+          color: errorText != null ? Colors.redAccent : Colors.white24,
+        ),
+      ),
       enabledBorder: OutlineInputBorder(
-        borderSide: const BorderSide(color: Colors.white24),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppConstants.largeRadius),
+        borderSide: BorderSide(
+          color: errorText != null ? Colors.redAccent : Colors.white24,
+        ),
       ),
       focusedBorder: OutlineInputBorder(
-        borderSide: const BorderSide(color: Colors.blue),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppConstants.largeRadius),
+        borderSide: BorderSide(
+          color: errorText != null ? Colors.redAccent : Colors.blue,
+        ),
       ),
     );
   }

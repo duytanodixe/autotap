@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../services/profile_local_service.dart';
 import '../models/profile.dart';
 import '../cubit/dot_cubit.dart';
+import '../utils/constants.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -23,12 +24,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _load();
   }
 
+  @override
+  void dispose() {
+    _nameCtl.dispose();
+    super.dispose();
+  }
+
   Future<void> _load() async {
     setState(() => _loading = true);
     try {
       final data = await _service.fetchProfiles();
-      setState(() => _profiles = data);
-    } finally {
+      setState(() {
+        _profiles = data;
+        _loading = false;
+      });
+    } catch (e) {
       setState(() => _loading = false);
     }
   }
@@ -40,8 +50,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       builder: (ctx) {
         return Dialog(
           backgroundColor: Colors.grey[850],
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppConstants.extraLargeRadius),
+          ),
           child: Container(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -66,7 +77,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     filled: true,
                     fillColor: Colors.grey[800],
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(AppConstants.largeRadius),
                       borderSide: BorderSide.none,
                     ),
                   ),
@@ -93,7 +104,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(AppConstants.largeRadius),
                           boxShadow: const [
                             BoxShadow(
                               color: Colors.blueAccent,
@@ -103,7 +114,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ],
                         ),
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 24, vertical: 10),
+                          horizontal: 24,
+                          vertical: 10,
+                        ),
                         child: const Text(
                           'Create',
                           style: TextStyle(
@@ -114,7 +127,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                   ],
-                )
+                ),
               ],
             ),
           ),
@@ -149,8 +162,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _deleteProfile(Profile p) async {
-    await _service.deleteProfile(p.id);
-    await _load();
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.grey[850],
+        title: const Text('Delete Profile', style: TextStyle(color: Colors.white)),
+        content: Text(
+          'Are you sure you want to delete "${p.name}"?',
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete', style: TextStyle(color: Colors.redAccent)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await _service.deleteProfile(p.id);
+      await _load();
+    }
   }
 
   @override
@@ -158,7 +195,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[900],
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(60),
+        preferredSize: const Size.fromHeight(AppConstants.miniAppBarHeight),
         child: AppBar(
           automaticallyImplyLeading: true,
           flexibleSpace: Container(
@@ -183,11 +220,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       body: _loading
           ? const Center(
-              child: CircularProgressIndicator(color: Colors.blueAccent))
+              child: CircularProgressIndicator(color: Colors.blueAccent),
+            )
           : _profiles.isEmpty
               ? const Center(
-                  child: Text('No profiles',
-                      style: TextStyle(color: Colors.white70)),
+                  child: Text(
+                    'No profiles',
+                    style: TextStyle(color: Colors.white70),
+                  ),
                 )
               : RefreshIndicator(
                   onRefresh: _load,
@@ -199,28 +239,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       final p = _profiles[index];
                       final isActive = p.isActive;
                       return AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
+                        duration: AppConstants.longAnimation,
                         curve: Curves.easeOut,
                         margin: const EdgeInsets.symmetric(vertical: 8),
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(
+                            AppConstants.extraLargeRadius,
+                          ),
                           gradient: LinearGradient(
                             colors: isActive
-                                ? [const Color(0xFF1E88E5), const Color(0xFF42A5F5)]
-                                : [const Color(0xFF2C2C2C), const Color(0xFF1A1A1A)],
+                                ? const [
+                                    Color(0xFF1E88E5),
+                                    Color(0xFF42A5F5),
+                                  ]
+                                : const [
+                                    Color(0xFF2C2C2C),
+                                    Color(0xFF1A1A1A),
+                                  ],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
                           boxShadow: [
                             if (isActive)
                               BoxShadow(
-                                color: Colors.blueAccent.withOpacity(0.6),
+                                color: Colors.blueAccent.withValues(alpha: 0.6),
                                 blurRadius: 12,
                                 spreadRadius: 1,
                               )
                             else
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.5),
+                                color: Colors.black.withValues(alpha: 0.5),
                                 blurRadius: 8,
                                 offset: const Offset(0, 4),
                               ),
@@ -228,9 +276,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         child: ListTile(
                           contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
                           leading: CircleAvatar(
-                            radius: 26,
+                            radius: AppConstants.profileAvatarRadius,
                             backgroundColor:
                                 isActive ? Colors.blueAccent : Colors.grey[700],
                             child: const Icon(
@@ -250,23 +300,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           subtitle: Text(
                             'ID: ${p.id}',
                             style: const TextStyle(
-                                color: Colors.white70, fontSize: 13),
+                              color: Colors.white70,
+                              fontSize: 13,
+                            ),
                           ),
                           trailing: Wrap(
                             spacing: 4,
                             children: [
                               if (isActive)
-                                const Icon(Icons.verified_rounded,
-                                    color: Colors.lightGreenAccent),
+                                const Icon(
+                                  Icons.verified_rounded,
+                                  color: Colors.lightGreenAccent,
+                                ),
                               IconButton(
-                                icon: const Icon(Icons.delete_forever_rounded,
-                                    color: Colors.redAccent),
+                                icon: const Icon(
+                                  Icons.delete_forever_rounded,
+                                  color: Colors.redAccent,
+                                ),
                                 onPressed: () => _deleteProfile(p),
                                 splashRadius: 24,
                               ),
                               IconButton(
-                                icon: const Icon(Icons.login_rounded,
-                                    color: Colors.white),
+                                icon: const Icon(
+                                  Icons.login_rounded,
+                                  color: Colors.white,
+                                ),
                                 onPressed: () => _selectAndSetActive(p),
                                 splashRadius: 24,
                               ),
@@ -279,16 +337,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
       floatingActionButton: Container(
-        width: 65,
-        height: 65,
-        decoration: const BoxDecoration(
+        width: AppConstants.fabSize,
+        height: AppConstants.fabSize,
+        decoration: BoxDecoration(
           shape: BoxShape.circle,
-          gradient: LinearGradient(
+          gradient: const LinearGradient(
             colors: [Color(0xFF1565C0), Color(0xFF42A5F5)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          boxShadow: [
+          boxShadow: const [
             BoxShadow(
               color: Colors.blueAccent,
               blurRadius: 8,
@@ -298,8 +356,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
         child: IconButton(
-          icon: const Icon(Icons.person_add_alt_1_rounded,
-              color: Colors.white, size: 30),
+          icon: const Icon(
+            Icons.person_add_alt_1_rounded,
+            color: Colors.white,
+            size: 30,
+          ),
           onPressed: _addProfile,
         ),
       ),

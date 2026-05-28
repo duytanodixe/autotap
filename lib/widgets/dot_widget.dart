@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../models/dot.dart';
 import '../cubit/dot_cubit.dart';
-import '../screens/setting_screen.dart'; // để dùng SettingScreen & SettingMode
+import '../screens/setting_screen.dart';
+import '../utils/constants.dart';
 
 class DotWidget extends StatefulWidget {
   final Dot dot;
@@ -10,56 +11,59 @@ class DotWidget extends StatefulWidget {
   final Function(Offset)? onPositionChanged;
 
   const DotWidget({
-    Key? key,
+    super.key,
     required this.dot,
     this.onTap,
     this.onPositionChanged,
-  }) : super(key: key);
+  });
 
   @override
   State<DotWidget> createState() => _DotWidgetState();
 }
 
 class _DotWidgetState extends State<DotWidget> {
-  late Offset position;
+  late Offset _position;
 
   @override
   void initState() {
     super.initState();
-    position = widget.dot.position;
+    _position = widget.dot.position;
   }
 
   @override
   void didUpdateWidget(covariant DotWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.dot.position != widget.dot.position) {
-      position = widget.dot.position;
+      _position = widget.dot.position;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Positioned(
-      left: position.dx,
-      top: position.dy,
+      left: _position.dx,
+      top: _position.dy,
       child: GestureDetector(
         onPanUpdate: (details) {
           setState(() {
-            position += details.delta;
+            _position += details.delta;
           });
-          widget.onPositionChanged?.call(position);
+          widget.onPositionChanged?.call(_position);
         },
         onTap: widget.onTap,
         child: Stack(
           alignment: Alignment.center,
           children: [
             Container(
-              width: 70,
-              height: 70,
-              color: Colors.black.withOpacity(0.2),
+              width: AppConstants.dotWidgetSize,
+              height: AppConstants.dotWidgetSize,
+              color: Colors.black.withValues(alpha: 0.2),
             ),
             CustomPaint(
-              size: const Size(60, 60),
+              size: const Size(
+                AppConstants.dotCrosshairSize,
+                AppConstants.dotCrosshairSize,
+              ),
               painter: CrosshairPainter(),
             ),
             Positioned(
@@ -79,24 +83,26 @@ class _DotWidgetState extends State<DotWidget> {
               top: -17,
               child: IconButton(
                 icon: const Icon(Icons.settings, color: Colors.white, size: 18),
-                onPressed: () {
-                  final dotCubit = context.read<DotCubit>();
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => BlocProvider.value(
-                        value: dotCubit,
-                        child: SettingScreen(
-                          mode: SettingMode.single,
-                          dotId: widget.dot.id,
-                        ),
-                      ),
-                    ),
-                  );
-                },
+                onPressed: () => _openSettings(context),
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  void _openSettings(BuildContext context) {
+    final dotCubit = context.read<DotCubit>();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BlocProvider.value(
+          value: dotCubit,
+          child: SettingScreen(
+            mode: SettingMode.single,
+            dotId: widget.dot.id,
+          ),
         ),
       ),
     );
@@ -106,33 +112,34 @@ class _DotWidgetState extends State<DotWidget> {
 class CrosshairPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final Paint circlePaint = Paint()
+    final circlePaint = Paint()
       ..color = Colors.blue
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
+      ..strokeWidth = AppConstants.dotCrosshairStrokeWidth;
 
-    final Paint linePaint = Paint()
+    final linePaint = Paint()
       ..color = Colors.blue
-      ..strokeWidth = 2;
+      ..strokeWidth = AppConstants.dotCrosshairStrokeWidth;
 
-    final Paint centerDotPaint = Paint()
+    final centerDotPaint = Paint()
       ..color = Colors.red
       ..style = PaintingStyle.fill;
 
-    final Offset center = Offset(size.width / 2, size.height / 2);
-    final double radius = size.width / 2 - 4;
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - 4;
 
-    // Vẽ vòng tròn
     canvas.drawCircle(center, radius, circlePaint);
-
-    // Vẽ dấu cộng
-    canvas.drawLine(Offset(center.dx - radius, center.dy),
-        Offset(center.dx + radius, center.dy), linePaint);
-    canvas.drawLine(Offset(center.dx, center.dy - radius),
-        Offset(center.dx, center.dy + radius), linePaint);
-
-    // Vẽ chấm đỏ ở tâm
-    canvas.drawCircle(center, 3, centerDotPaint);
+    canvas.drawLine(
+      Offset(center.dx - radius, center.dy),
+      Offset(center.dx + radius, center.dy),
+      linePaint,
+    );
+    canvas.drawLine(
+      Offset(center.dx, center.dy - radius),
+      Offset(center.dx, center.dy + radius),
+      linePaint,
+    );
+    canvas.drawCircle(center, AppConstants.dotCenterDotRadius, centerDotPaint);
   }
 
   @override

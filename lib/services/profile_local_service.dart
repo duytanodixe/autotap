@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/profile.dart';
 
@@ -11,11 +12,12 @@ class ProfileLocalService {
       final prefs = await SharedPreferences.getInstance();
       final profilesData = prefs.getString(_profilesKey);
       
-      if (profilesData == null) return [];
+      if (profilesData == null || profilesData.isEmpty) return [];
 
       final List<dynamic> profilesList = json.decode(profilesData);
-      return profilesList.map((profileData) => Profile.fromMap(profileData)).toList();
+      return profilesList.map((profileData) => Profile.fromMap(profileData as Map<String, dynamic>)).toList();
     } catch (e) {
+      debugPrint('ProfileLocalService.fetchProfiles error: $e');
       return [];
     }
   }
@@ -25,6 +27,7 @@ class ProfileLocalService {
       final prefs = await SharedPreferences.getInstance();
       return prefs.getString(_activeProfileKey);
     } catch (e) {
+      debugPrint('ProfileLocalService.getActiveProfileId error: $e');
       return null;
     }
   }
@@ -35,12 +38,13 @@ class ProfileLocalService {
       final profilesData = prefs.getString(_profilesKey);
       
       List<dynamic> profilesList = [];
-      if (profilesData != null) {
-        profilesList = json.decode(profilesData);
+      if (profilesData != null && profilesData.isNotEmpty) {
+        profilesList = json.decode(profilesData) as List<dynamic>;
       }
 
-      // Kiểm tra xem profile đã tồn tại chưa
-      final existingIndex = profilesList.indexWhere((p) => p['id'] == profile.id);
+      final existingIndex = profilesList.indexWhere(
+        (p) => (p as Map<String, dynamic>)['id'] == profile.id,
+      );
       if (existingIndex != -1) {
         profilesList[existingIndex] = profile.toMap();
       } else {
@@ -49,7 +53,8 @@ class ProfileLocalService {
       
       await prefs.setString(_profilesKey, json.encode(profilesList));
     } catch (e) {
-      throw Exception('Failed to save profile: $e');
+      debugPrint('ProfileLocalService.addProfile error: $e');
+      rethrow;
     }
   }
 
@@ -62,20 +67,22 @@ class ProfileLocalService {
       final prefs = await SharedPreferences.getInstance();
       final profilesData = prefs.getString(_profilesKey);
       
-      if (profilesData == null) return;
+      if (profilesData == null || profilesData.isEmpty) return;
 
-      List<dynamic> profilesList = json.decode(profilesData);
-      profilesList.removeWhere((profile) => profile['id'] == profileId);
+      List<dynamic> profilesList = json.decode(profilesData) as List<dynamic>;
+      profilesList.removeWhere(
+        (profile) => (profile as Map<String, dynamic>)['id'] == profileId,
+      );
       
       await prefs.setString(_profilesKey, json.encode(profilesList));
 
-      // Nếu profile bị xóa là active profile, xóa active profile
       final activeProfileId = await getActiveProfileId();
       if (activeProfileId == profileId) {
         await prefs.remove(_activeProfileKey);
       }
     } catch (e) {
-      throw Exception('Failed to delete profile: $e');
+      debugPrint('ProfileLocalService.deleteProfile error: $e');
+      rethrow;
     }
   }
 
@@ -83,27 +90,29 @@ class ProfileLocalService {
     try {
       final prefs = await SharedPreferences.getInstance();
       
-      // Cập nhật tất cả profiles để set isActive = false
       final profilesData = prefs.getString(_profilesKey);
-      if (profilesData != null) {
-        List<dynamic> profilesList = json.decode(profilesData);
+      if (profilesData != null && profilesData.isNotEmpty) {
+        List<dynamic> profilesList = json.decode(profilesData) as List<dynamic>;
         for (int i = 0; i < profilesList.length; i++) {
-          profilesList[i]['isActive'] = false;
+          final p = profilesList[i] as Map<String, dynamic>;
+          profilesList[i] = {...p, 'isActive': false};
         }
         
-        // Set profile được chọn là active
-        final profileIndex = profilesList.indexWhere((p) => p['id'] == profileId);
+        final profileIndex = profilesList.indexWhere(
+          (p) => (p as Map<String, dynamic>)['id'] == profileId,
+        );
         if (profileIndex != -1) {
-          profilesList[profileIndex]['isActive'] = true;
+          final p = profilesList[profileIndex] as Map<String, dynamic>;
+          profilesList[profileIndex] = {...p, 'isActive': true};
         }
         
         await prefs.setString(_profilesKey, json.encode(profilesList));
       }
       
-      // Lưu active profile ID
       await prefs.setString(_activeProfileKey, profileId);
     } catch (e) {
-      throw Exception('Failed to set active profile: $e');
+      debugPrint('ProfileLocalService.setActiveProfile error: $e');
+      rethrow;
     }
   }
 }

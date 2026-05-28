@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'browser_screen.dart';
+import '../utils/constants.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -10,7 +11,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _controller = TextEditingController();
-  bool _isPressed = false; // để tạo hiệu ứng nhấn cho nút
+  bool _isPressed = false;
 
   void _goToBrowser() {
     String url = _controller.text.trim();
@@ -31,18 +32,27 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF101820),
+      backgroundColor: const Color(AppConstants.backgroundDark),
 
-      // ======= HEADER =======
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(100),
+        preferredSize: const Size.fromHeight(AppConstants.appBarHeight),
         child: Container(
-          padding:
-              const EdgeInsets.only(top: 40, left: 20, right: 20, bottom: 20),
+          padding: const EdgeInsets.only(
+            top: 40,
+            left: 20,
+            right: 20,
+            bottom: 20,
+          ),
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               colors: [Color(0xFF1565C0), Color(0xFF42A5F5)],
@@ -64,7 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           child: Center(
             child: Text(
-              'Auto Tap Pro',
+              AppConstants.appName,
               style: theme.textTheme.headlineSmall?.copyWith(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
@@ -74,15 +84,14 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
 
-      // ======= BODY =======
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.all(20.0),
+          padding: const EdgeInsets.all(AppConstants.largePadding),
           child: Container(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(AppConstants.extraPadding),
             decoration: BoxDecoration(
-              color: const Color(0xFF1C1F26),
-              borderRadius: BorderRadius.circular(20),
+              color: const Color(AppConstants.cardDark),
+              borderRadius: BorderRadius.circular(AppConstants.ultraLargeRadius),
               boxShadow: const [
                 BoxShadow(
                   color: Colors.black87,
@@ -109,8 +118,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 20),
                 Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2C2F36),
-                    borderRadius: BorderRadius.circular(14),
+                    color: const Color(AppConstants.inputDark),
+                    borderRadius: BorderRadius.circular(AppConstants.largeRadius),
                     boxShadow: const [
                       BoxShadow(
                         color: Colors.black54,
@@ -133,20 +142,20 @@ class _HomeScreenState extends State<HomeScreen> {
                     decoration: InputDecoration(
                       hintText: 'Ex: google.com',
                       hintStyle: TextStyle(
-                        color: Colors.grey.withOpacity(0.6),
+                        color: Colors.grey.withValues(alpha: 0.6),
                         fontStyle: FontStyle.italic,
                       ),
-                      prefixIcon:
-                          const Icon(Icons.language, color: Colors.blueAccent),
+                      prefixIcon: const Icon(Icons.language, color: Colors.blueAccent),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 14),
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(height: 24),
 
-                // ======= NÚT BROWSE =======
                 GestureDetector(
                   onTapDown: (_) => setState(() => _isPressed = true),
                   onTapUp: (_) {
@@ -155,7 +164,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   },
                   onTapCancel: () => setState(() => _isPressed = false),
                   child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 150),
+                    duration: AppConstants.mediumAnimation,
                     height: 50,
                     width: double.infinity,
                     decoration: BoxDecoration(
@@ -164,7 +173,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(AppConstants.largeRadius),
                       boxShadow: _isPressed
                           ? const [
                               BoxShadow(
@@ -212,4 +221,3 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
-//123123/123/12312312312312312312321321323132

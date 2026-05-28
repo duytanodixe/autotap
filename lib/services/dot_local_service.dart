@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/dot.dart';
 
@@ -10,24 +11,26 @@ class DotLocalService {
       final prefs = await SharedPreferences.getInstance();
       final dotsData = prefs.getString(_dotsKey);
       
-      if (dotsData == null) return [];
+      if (dotsData == null || dotsData.isEmpty) return [];
 
       final Map<String, dynamic> allDots = json.decode(dotsData);
       
       if (profileId != null) {
         final profileDots = allDots[profileId] as List<dynamic>? ?? [];
-        return profileDots.map((dotData) => Dot.fromMap(dotData)).toList();
+        return profileDots.map((dotData) => Dot.fromMap(dotData as Map<String, dynamic>)).toList();
       } else {
-        // Trả về tất cả dots từ tất cả profiles
         final List<Dot> allDotsList = [];
         for (final profileDots in allDots.values) {
           if (profileDots is List) {
-            allDotsList.addAll(profileDots.map((dotData) => Dot.fromMap(dotData)));
+            allDotsList.addAll(
+              profileDots.map((dotData) => Dot.fromMap(dotData as Map<String, dynamic>)),
+            );
           }
         }
         return allDotsList;
       }
     } catch (e) {
+      debugPrint('DotLocalService.fetchDots error: $e');
       return [];
     }
   }
@@ -38,14 +41,13 @@ class DotLocalService {
       final dotsData = prefs.getString(_dotsKey);
       
       Map<String, dynamic> allDots = {};
-      if (dotsData != null) {
-        allDots = json.decode(dotsData);
+      if (dotsData != null && dotsData.isNotEmpty) {
+        allDots = json.decode(dotsData) as Map<String, dynamic>;
       }
 
       final currentProfileId = profileId ?? 'default';
-      List<dynamic> profileDots = allDots[currentProfileId] as List<dynamic>? ?? [];
+      List<dynamic> profileDots = (allDots[currentProfileId] as List<dynamic>?) ?? [];
       
-      // Kiểm tra xem dot đã tồn tại chưa
       final existingIndex = profileDots.indexWhere((d) => d['id'] == dot.id);
       if (existingIndex != -1) {
         profileDots[existingIndex] = dot.toMap();
@@ -56,7 +58,8 @@ class DotLocalService {
       allDots[currentProfileId] = profileDots;
       await prefs.setString(_dotsKey, json.encode(allDots));
     } catch (e) {
-      throw Exception('Failed to save dot: $e');
+      debugPrint('DotLocalService.addDot error: $e');
+      rethrow;
     }
   }
 
@@ -69,7 +72,7 @@ class DotLocalService {
       final prefs = await SharedPreferences.getInstance();
       final dotsData = prefs.getString(_dotsKey);
       
-      if (dotsData == null) return;
+      if (dotsData == null || dotsData.isEmpty) return;
 
       Map<String, dynamic> allDots = json.decode(dotsData);
       
@@ -78,17 +81,17 @@ class DotLocalService {
         profileDots.removeWhere((dot) => dot['id'] == dotId);
         allDots[profileId] = profileDots;
       } else {
-        // Xóa dot từ tất cả profiles
-        for (final profileId in allDots.keys) {
-          final profileDots = allDots[profileId] as List<dynamic>? ?? [];
+        for (final key in allDots.keys.toList()) {
+          final profileDots = allDots[key] as List<dynamic>? ?? [];
           profileDots.removeWhere((dot) => dot['id'] == dotId);
-          allDots[profileId] = profileDots;
+          allDots[key] = profileDots;
         }
       }
       
       await prefs.setString(_dotsKey, json.encode(allDots));
     } catch (e) {
-      throw Exception('Failed to delete dot: $e');
+      debugPrint('DotLocalService.deleteDot error: $e');
+      rethrow;
     }
   }
 
@@ -98,8 +101,8 @@ class DotLocalService {
       final dotsData = prefs.getString(_dotsKey);
       
       Map<String, dynamic> allDots = {};
-      if (dotsData != null) {
-        allDots = json.decode(dotsData);
+      if (dotsData != null && dotsData.isNotEmpty) {
+        allDots = json.decode(dotsData) as Map<String, dynamic>;
       }
 
       final currentProfileId = profileId ?? 'default';
@@ -107,7 +110,8 @@ class DotLocalService {
       
       await prefs.setString(_dotsKey, json.encode(allDots));
     } catch (e) {
-      throw Exception('Failed to save dots: $e');
+      debugPrint('DotLocalService.saveDots error: $e');
+      rethrow;
     }
   }
 }

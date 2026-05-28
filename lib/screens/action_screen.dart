@@ -1,9 +1,10 @@
-import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 import 'package:flutter_app_minimizer_plus/flutter_app_minimizer_plus.dart';
+import '../utils/constants.dart';
+
 class ActionScreen extends StatefulWidget {
-  const ActionScreen({Key? key}) : super(key: key);
+  const ActionScreen({super.key});
 
   @override
   State<ActionScreen> createState() => _ActionScreenState();
@@ -11,50 +12,73 @@ class ActionScreen extends StatefulWidget {
 
 class _ActionScreenState extends State<ActionScreen> {
   bool _isPressed = false;
+  bool _isLoading = false;
 
-Future<void> _onTapButton() async {
-  bool? permissionStatus = await FlutterOverlayWindow.isPermissionGranted();
+  Future<void> _onTapButton() async {
+    if (_isLoading) return;
+    
+    setState(() => _isLoading = true);
 
-  // Nếu chưa có quyền → xin quyền
-  if (permissionStatus != true) {
-    await FlutterOverlayWindow.requestPermission();
+    try {
+      final permissionStatus = await FlutterOverlayWindow.isPermissionGranted();
 
-    permissionStatus = await FlutterOverlayWindow.isPermissionGranted();
-    if (permissionStatus != true) {
-      debugPrint("❌ Người dùng chưa cấp quyền overlay");
-      return;
+      if (permissionStatus != true) {
+        await FlutterOverlayWindow.requestPermission();
+        final newStatus = await FlutterOverlayWindow.isPermissionGranted();
+        if (newStatus != true) {
+          if (mounted) {
+            _showSnackBar('Overlay permission denied');
+          }
+          return;
+        }
+      }
+
+      await FlutterOverlayWindow.showOverlay(
+        overlayTitle: 'Auto Tap Overlay',
+        height: WindowSize.matchParent,
+        width: WindowSize.matchParent,
+        alignment: OverlayAlignment.centerRight,
+        flag: OverlayFlag.defaultFlag,
+        visibility: NotificationVisibility.visibilityPrivate,
+      );
+
+      try {
+        await FlutterAppMinimizerPlus.minimizeApp();
+      } catch (e) {
+        debugPrint('Cannot minimize app: $e');
+      }
+    } catch (e) {
+      if (mounted) {
+        _showSnackBar('Error: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
-  // ⭐ Gọi overlay entry point của bạn
-  await FlutterOverlayWindow.showOverlay(
-    overlayTitle: "overlayMain",   // <-- RẤT QUAN TRỌNG, phải KHỚP tên entry point
-    height: WindowSize.matchParent,
-    width: WindowSize.matchParent,
-    alignment: OverlayAlignment.centerRight,
-    flag: OverlayFlag.defaultFlag,
-    visibility: NotificationVisibility.visibilityPrivate,
-  );
-
-  //Thu nhỏ app
-  try {
-    await FlutterAppMinimizerPlus.minimizeApp();
-  } catch (e) {
-    debugPrint("⚠️ Không thể thu nhỏ app: $e");
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: const Color(0xFF101820),
+      backgroundColor: const Color(AppConstants.backgroundDark),
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(100),
+        preferredSize: const Size.fromHeight(AppConstants.appBarHeight),
         child: Container(
-          padding:
-              const EdgeInsets.only(top: 40, left: 20, right: 20, bottom: 20),
+          padding: const EdgeInsets.only(
+            top: 40,
+            left: 20,
+            right: 20,
+            bottom: 20,
+          ),
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               colors: [Color(0xFF1565C0), Color(0xFF42A5F5)],
@@ -89,16 +113,20 @@ Future<void> _onTapButton() async {
         padding: const EdgeInsets.only(bottom: 60),
         child: Center(
           child: GestureDetector(
-            onTapDown: (_) => setState(() => _isPressed = true),
+            onTapDown: (_) {
+              if (!_isLoading) setState(() => _isPressed = true);
+            },
             onTapUp: (_) {
-              setState(() => _isPressed = false);
-              _onTapButton();
+              if (!_isLoading) {
+                setState(() => _isPressed = false);
+                _onTapButton();
+              }
             },
             onTapCancel: () => setState(() => _isPressed = false),
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 120),
-              height: 180,
-              width: 180,
+              duration: AppConstants.shortAnimation,
+              height: AppConstants.profileButtonHeight,
+              width: AppConstants.profileButtonWidth,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: const LinearGradient(
@@ -132,22 +160,32 @@ Future<void> _onTapButton() async {
                         ),
                       ],
               ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Icon(Icons.play_arrow, color: Colors.white, size: 60),
-                  SizedBox(height: 6),
-                  Text(
-                    'START',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.2,
+              child: _isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                      ),
+                    )
+                  : Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const [
+                        Icon(
+                          Icons.play_arrow,
+                          color: Colors.white,
+                          size: 60,
+                        ),
+                        SizedBox(height: 6),
+                        Text(
+                          'START',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
             ),
           ),
         ),

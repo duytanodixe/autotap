@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
+import '../utils/constants.dart';
 
 class TutorialScreen extends StatefulWidget {
   const TutorialScreen({super.key});
@@ -14,27 +15,30 @@ class _TutorialScreenState extends State<TutorialScreen> {
 
   final List<Map<String, String>> _tutorials = List.generate(9, (index) {
     return {
-      "image": "assets/images/guide_${index + 1}.jpg",
-      "title": "Step ${index + 1}: Sample Title",
-      "desc": "Description for step ${index + 1}.",
+      'image': 'assets/images/guide_${index + 1}.jpg',
+      'title': 'Step ${index + 1}: Sample Title',
+      'desc': 'Description for step ${index + 1}.',
     };
   });
 
   @override
   void initState() {
     super.initState();
-    _controller.addListener(() {
-      int page = _controller.page?.round() ?? 0;
-      if (_currentStep != page) {
-        setState(() {
-          _currentStep = page;
-        });
-      }
-    });
+    _controller.addListener(_onPageChanged);
+  }
+
+  void _onPageChanged() {
+    final page = _controller.page?.round() ?? 0;
+    if (_currentStep != page) {
+      setState(() {
+        _currentStep = page;
+      });
+    }
   }
 
   @override
   void dispose() {
+    _controller.removeListener(_onPageChanged);
     _controller.dispose();
     super.dispose();
   }
@@ -44,14 +48,17 @@ class _TutorialScreenState extends State<TutorialScreen> {
     final item = _tutorials[_currentStep];
 
     return Scaffold(
-      backgroundColor: const Color(0xFF101820), // nền đen
+      backgroundColor: const Color(AppConstants.backgroundDark),
 
-      // ===== HEADER =====
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(100),
+        preferredSize: const Size.fromHeight(AppConstants.appBarHeight),
         child: Container(
-          padding:
-              const EdgeInsets.only(top: 40, left: 20, right: 20, bottom: 20),
+          padding: const EdgeInsets.only(
+            top: 40,
+            left: 20,
+            right: 20,
+            bottom: 20,
+          ),
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               colors: [Color(0xFF1565C0), Color(0xFF42A5F5)],
@@ -82,19 +89,30 @@ class _TutorialScreenState extends State<TutorialScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Hình minh họa
             Expanded(
               child: PageView.builder(
                 controller: _controller,
                 itemCount: _tutorials.length,
                 itemBuilder: (context, index) {
                   return Padding(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(AppConstants.largePadding),
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(AppConstants.mediumRadius),
                       child: Image.asset(
-                        _tutorials[index]["image"]!,
+                        _tutorials[index]['image']!,
                         fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Colors.grey[800],
+                            child: const Center(
+                              child: Icon(
+                                Icons.image_not_supported,
+                                color: Colors.white54,
+                                size: 64,
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ),
                   );
@@ -104,7 +122,6 @@ class _TutorialScreenState extends State<TutorialScreen> {
 
             const SizedBox(height: 15),
 
-            // Dấu chấm chuyển trang
             SmoothPageIndicator(
               controller: _controller,
               count: _tutorials.length,
@@ -118,9 +135,8 @@ class _TutorialScreenState extends State<TutorialScreen> {
 
             const SizedBox(height: 20),
 
-            // Tiêu đề
             Text(
-              item["title"]!,
+              item['title']!,
               style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -130,9 +146,8 @@ class _TutorialScreenState extends State<TutorialScreen> {
             ),
             const SizedBox(height: 10),
 
-            // Mô tả
             Text(
-              item["desc"]!,
+              item['desc']!,
               style: const TextStyle(
                 fontSize: 16,
                 color: Colors.white70,
@@ -142,7 +157,6 @@ class _TutorialScreenState extends State<TutorialScreen> {
 
             const SizedBox(height: 20),
 
-            // Ghi chú
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 20),
               child: Text(
@@ -155,7 +169,6 @@ class _TutorialScreenState extends State<TutorialScreen> {
 
             const SizedBox(height: 10),
 
-            // Friendly reminder
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 20),
               child: Text(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../widgets/navbar_widget.dart';
 import 'action_screen.dart';
 import 'home_screen.dart';
+import 'settings_screen.dart';
 import 'tutorial_screen.dart';
 
 class MainScreen extends StatefulWidget {
@@ -14,9 +15,10 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
 
-  late final List<Widget> _screens = const [
+  final List<Widget> _screens = const [
     HomeScreen(),
     TutorialScreen(),
+    SettingsScreen(),
     ActionScreen(),
   ];
 

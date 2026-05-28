@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import '../widgets/webview_panel.dart';
-import '../widgets/toolbar.dart'; 
+import '../widgets/toolbar.dart';
+import '../utils/constants.dart';
 
 class BrowserScreen extends StatefulWidget {
   final String url;
-  const BrowserScreen({Key? key, required this.url}) : super(key: key);
+  const BrowserScreen({super.key, required this.url});
 
   @override
   State<BrowserScreen> createState() => _BrowserScreenState();
@@ -14,14 +15,19 @@ class BrowserScreen extends StatefulWidget {
 class _BrowserScreenState extends State<BrowserScreen> {
   late TextEditingController _urlController;
   late String _currentUrl;
-
-  InAppWebViewController? _webController; // giữ controller ở đây
+  InAppWebViewController? _webController;
 
   @override
   void initState() {
     super.initState();
     _currentUrl = widget.url;
     _urlController = TextEditingController(text: widget.url);
+  }
+
+  @override
+  void dispose() {
+    _urlController.dispose();
+    super.dispose();
   }
 
   void _loadUrl() {
@@ -41,7 +47,7 @@ class _BrowserScreenState extends State<BrowserScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(100),
+        preferredSize: const Size.fromHeight(AppConstants.appBarHeight),
         child: Container(
           padding: const EdgeInsets.only(top: 40, left: 10, right: 10, bottom: 10),
           decoration: const BoxDecoration(
@@ -63,7 +69,7 @@ class _BrowserScreenState extends State<BrowserScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 10),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(AppConstants.smallRadius),
                   ),
                   child: TextField(
                     controller: _urlController,
@@ -73,7 +79,7 @@ class _BrowserScreenState extends State<BrowserScreen> {
                       border: InputBorder.none,
                       hintText: 'Nhập địa chỉ web',
                       hintStyle: TextStyle(
-                        color: Colors.grey.withOpacity(0.6),
+                        color: Colors.grey.withValues(alpha: 0.6),
                         fontStyle: FontStyle.italic,
                       ),
                     ),
@@ -91,14 +97,14 @@ class _BrowserScreenState extends State<BrowserScreen> {
       body: Stack(
         children: [
           Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.all(AppConstants.smallPadding),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppConstants.mediumRadius),
               child: WebViewPanel(
                 url: _currentUrl,
                 onWebViewCreated: (controller) {
                   setState(() {
-                    _webController = controller; 
+                    _webController = controller;
                   });
                 },
               ),
